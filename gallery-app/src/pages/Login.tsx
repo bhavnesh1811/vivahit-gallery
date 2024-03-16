@@ -21,12 +21,16 @@ import { showToast } from "../scripts/showToast";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
 import { auth } from "../configs/firebase";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 function Login(): React.ReactElement {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const toast = useToast();
   const navigate = useNavigate();
-
+  const [user] = useAuthState(auth);
+  if (user) {
+    navigate("/");
+  }
   const formdata = {
     email: useRef<HTMLInputElement | null>(null),
     password: useRef<HTMLInputElement | null>(null),
@@ -54,14 +58,15 @@ function Login(): React.ReactElement {
         });
     }
   };
+
   return (
     <Flex
-      minH={"100vh"}
+      
       align={"center"}
       justify={"center"}
       bg={useColorModeValue("gray.50", "gray.800")}
     >
-      <Stack spacing={8} mx={"auto"} maxW={"lg"} py={12} px={6}>
+      <Stack spacing={8} mx={"auto"} maxW={"lg"} py={6} px={6}>
         <Stack align={"center"}>
           <Heading fontSize={"4xl"} textAlign={"center"}>
             Login
@@ -103,7 +108,7 @@ function Login(): React.ReactElement {
             </FormControl>
             <Stack spacing={10} pt={2}>
               <Button
-              type="submit"
+                type="submit"
                 loadingText="Submitting"
                 size="lg"
                 bg={"blue.400"}

@@ -18,14 +18,20 @@ import {
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { Link, useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../configs/firebase";
+import { auth, db } from "../configs/firebase";
 import { showToast } from "../scripts/showToast";
 import { FirebaseError } from "firebase/app";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { doc, setDoc } from "firebase/firestore";
 
 function Signup(): React.ReactElement {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const toast = useToast();
   const navigate = useNavigate();
+  const [user] = useAuthState(auth);
+  if (user) {
+    navigate("/");
+  }
 
   const formdata = {
     email: useRef<HTMLInputElement | null>(null),
@@ -41,7 +47,7 @@ function Signup(): React.ReactElement {
 
     if (email && password && name) {
       createUserWithEmailAndPassword(auth, email, password)
-        .then((userCredential) => {
+        .then(async(userCredential) => {
           if (userCredential.user) {
             showToast(
               "Sign up Successful",
@@ -49,6 +55,7 @@ function Signup(): React.ReactElement {
               "success",
               toast
             );
+            await setDoc(doc(db,"gallery",userCredential.user.uid),{gallery:[]});
             navigate("/login");
           }
         })
