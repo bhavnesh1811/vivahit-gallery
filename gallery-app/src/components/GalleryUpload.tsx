@@ -54,8 +54,14 @@ const GalleryUpload: React.FC = () => {
       file = event.target.files[0];
     }
     try {
+      
       if (!file) {
         showToast("Error", "Please select a file to upload.", "error", toast);
+        return;
+      }
+      if (file.size>30*1024*1024) {
+        showToast("Error", "Please size should be less than 30mb", "error", toast);
+        file=null;
         return;
       }
       if (!isImageOrVideo(file.type)) {
@@ -107,6 +113,7 @@ const GalleryUpload: React.FC = () => {
             );
             setUploadStatus(false);
             setUploadProgress(0);
+            file=null;
             getData();
           });
         }
@@ -152,13 +159,13 @@ const GalleryUpload: React.FC = () => {
                 h={7}
                 w={7}
               />
-              <Input
+              {!uploadStatus && <Input
                 id="fileUpload"
                 onChange={handleUpload}
                 style={{ display: "none" }}
                 type="file"
                 accept="image/*, video/*"
-              />
+              />}
               <Text>
                 {uploadStatus ? (
                   <CircularProgress value={uploadProgress} >
