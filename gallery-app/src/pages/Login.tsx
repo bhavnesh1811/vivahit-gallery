@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import {
   Flex,
   Box,
@@ -21,16 +21,21 @@ import { showToast } from "../scripts/showToast";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { FirebaseError } from "firebase/app";
 import { auth } from "../configs/firebase";
-import { useAuthState } from "react-firebase-hooks/auth";
+import { AuthContext } from "../context/AuthContextProvider";
 
 function Login(): React.ReactElement {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const toast = useToast();
   const navigate = useNavigate();
-  const [user] = useAuthState(auth);
-  if (user) {
-    navigate("/");
-  }
+  const values = useContext(AuthContext);
+
+  useEffect(() => {
+    if (values.user) {
+      navigate("/");
+    }
+    // eslint-disable-next-line
+  }, []);
+
   const formdata = {
     email: useRef<HTMLInputElement | null>(null),
     password: useRef<HTMLInputElement | null>(null),
@@ -61,7 +66,6 @@ function Login(): React.ReactElement {
 
   return (
     <Flex
-      
       align={"center"}
       justify={"center"}
       bg={useColorModeValue("gray.50", "gray.800")}

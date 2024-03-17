@@ -1,36 +1,38 @@
-import React, { useState, useEffect } from "react";
-import { Flex, Input, Button, useToast, Progress } from "@chakra-ui/react";
+import React, { useState, useEffect, useContext } from "react";
+import {
+  Flex,
+  Input,
+  useToast,
+  CircularProgress,
+  Icon,
+  Text,
+  CircularProgressLabel,
+} from "@chakra-ui/react";
 import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
-import { auth, db, storage } from "../configs/firebase";
+import { db, storage } from "../configs/firebase";
+import { MdAddAPhoto } from "react-icons/md";
 import { v4 as uuidv4 } from "uuid";
 import { arrayUnion, doc, getDoc, updateDoc } from "firebase/firestore";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { showToast } from "../scripts/showToast";
 import { FileData } from "../interfaces/interface";
 import Sizes from "./Sizes";
 import { calculateSize, isImageOrVideo } from "../scripts/script";
 import Gallery from "./Gallery";
+import { AuthContext } from "../context/AuthContextProvider";
 
 const GalleryUpload: React.FC = () => {
-  const [file, setFile] = useState<File | null>(null);
   const toast = useToast();
   const [data, setData] = useState<FileData[]>([]);
-  const [value, setValue] = useState<number>(0);
   const [uploadStatus, setUploadStatus] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [allFilesSize, setAllFilesSize] = useState<string>("");
   const [imageFilesSize, setImageFilesSize] = useState<string>("");
   const [videoFilesSize, setVideoFilesSize] = useState<string>("");
-  const [user] = useAuthState(auth);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      setFile(event.target.files[0]);
-    }
-  };
+  const values = useContext(AuthContext);
 
   const getData = async () => {
-    if (user) {
-      let res = await getDoc(doc(db, "gallery", user?.uid));
+    if (values.user) {
+      let res = await getDoc(doc(db, "gallery", values.user?.uid));
       let temp = res.data();
       if (temp) {
         setData(temp?.gallery);
@@ -46,7 +48,11 @@ const GalleryUpload: React.FC = () => {
     // eslint-disable-next-line
   }, []);
 
-  const handleUpload = async () => {
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    let file: File | null = null;
+    if (event.target.files && event.target.files.length > 0) {
+      file = event.target.files[0];
+    }
     try {
       if (!file) {
         showToast("Error", "Please select a file to upload.", "error", toast);
@@ -70,27 +76,27 @@ const GalleryUpload: React.FC = () => {
         fileUrl: "",
       };
       const storageRef = ref(storage, data.name);
-      const uploadData = uploadBytesResumable(storageRef, file);
-      uploadData.on(
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      setUploadStatus(true);
+      uploadTask.on(
         "state_changed",
         (snapshot) => {
           const progress =
             (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            // console.log(progress);
-            
-          setUploadStatus(progress !== 100 ? true : false);
-          setValue(progress !== 100 ? snapshot.bytesTransferred : 0);
-          // <Progress hasStripe value={snapshot.bytesTransferred} />
+          setUploadProgress(progress);
         },
         (error) => {
-          //error
+          console.error("Error uploading file:", error);
+          showToast("Error", "Failed to upload file.", "error", toast);
+          setUploadStatus(false);
+          setUploadProgress(0);
         },
         () => {
-          getDownloadURL(uploadData.snapshot.ref).then(async (download) => {
-            // console.log(download);
+          getDownloadURL(uploadTask.snapshot.ref).then(async (download) => {
             data.fileUrl = download;
-            if (user?.uid)
-              await updateDoc(doc(db, "gallery", user?.uid), {
+            if (values?.user?.uid)
+              await updateDoc(doc(db, "gallery", values?.user?.uid), {
                 gallery: arrayUnion(data),
               });
             showToast(
@@ -99,12 +105,17 @@ const GalleryUpload: React.FC = () => {
               "success",
               toast
             );
+            setUploadStatus(false);
+            setUploadProgress(0);
+            getData();
           });
         }
       );
     } catch (error) {
       console.error("Error uploading file:", error);
       showToast("Error", "Failed to upload file.", "error", toast);
+      setUploadStatus(false);
+      setUploadProgress(0);
     }
   };
 
@@ -115,18 +126,53 @@ const GalleryUpload: React.FC = () => {
         imageFilesSize={imageFilesSize}
         videoFilesSize={videoFilesSize}
       />
-      <Flex gap="16px" flexWrap={"wrap"} my="16px">
-        <Flex direction={"column"} gap="16px">
-          {uploadStatus ? (
-            <Progress hasStripe value={value} isIndeterminate />
-          ) : (
-            <>
-              <Input type="file" onChange={handleFileChange} />
-              <Button onClick={handleUpload}>Upload</Button>
-            </>
-          )}
+      <Flex
+        display={{ base: "grid", md: "flex" }}
+        gap="16px"
+        flexWrap="wrap"
+        my="16px"
+        direction={{ base: "column", md: "row" }}
+        gridTemplateColumns={{ base: "repeat(1,1fr)", sm: "repeat(2,1fr)" }}
+      >
+        <Flex
+          justifyContent={"center"}
+          alignItems={"center"}
+          borderRadius={"12px"}
+          p="4px"
+          boxShadow={"rgba(0,0,0,0.5)0px 5px 15px"}
+          width={{ base: "100%", md: "200px" }}
+          height={"200px"}
+        >
+          <label htmlFor="fileUpload" style={{ cursor: "pointer" }}>
+            <Flex direction={"column"} gap="16px">
+              <Icon
+                alignSelf={"center"}
+                as={MdAddAPhoto}
+                color="red"
+                h={7}
+                w={7}
+              />
+              <Input
+                id="fileUpload"
+                onChange={handleUpload}
+                style={{ display: "none" }}
+                type="file"
+                accept="image/*, video/*"
+              />
+              <Text>
+                {uploadStatus ? (
+                  <CircularProgress value={uploadProgress}>
+                    <CircularProgressLabel>
+                      {uploadProgress.toFixed(2)}%
+                    </CircularProgressLabel>
+                  </CircularProgress>
+                ) : (
+                  "Upload Image/Video"
+                )}
+              </Text>
+            </Flex>
+          </label>
         </Flex>
-
         {data &&
           data?.map((file: FileData) => (
             <Gallery key={file.name} file={file} />

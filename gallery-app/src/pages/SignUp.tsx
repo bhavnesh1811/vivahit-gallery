@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import {
   Flex,
   Box,
@@ -21,17 +21,21 @@ import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../configs/firebase";
 import { showToast } from "../scripts/showToast";
 import { FirebaseError } from "firebase/app";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { doc, setDoc } from "firebase/firestore";
+import { AuthContext } from "../context/AuthContextProvider";
 
 function Signup(): React.ReactElement {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const toast = useToast();
   const navigate = useNavigate();
-  const [user] = useAuthState(auth);
-  if (user) {
-    navigate("/");
-  }
+  const values = useContext(AuthContext);
+
+  useEffect(() => {
+    if (values.user) {
+      navigate("/");
+    }
+    // eslint-disable-next-line
+  }, []);
 
   const formdata = {
     email: useRef<HTMLInputElement | null>(null),
@@ -47,7 +51,7 @@ function Signup(): React.ReactElement {
 
     if (email && password && name) {
       createUserWithEmailAndPassword(auth, email, password)
-        .then(async(userCredential) => {
+        .then(async (userCredential) => {
           if (userCredential.user) {
             showToast(
               "Sign up Successful",
@@ -55,7 +59,9 @@ function Signup(): React.ReactElement {
               "success",
               toast
             );
-            await setDoc(doc(db,"gallery",userCredential.user.uid),{gallery:[]});
+            await setDoc(doc(db, "gallery", userCredential.user.uid), {
+              gallery: [],
+            });
             navigate("/login");
           }
         })

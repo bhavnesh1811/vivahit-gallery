@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   Button,
   Flex,
@@ -10,12 +10,12 @@ import { signOut } from "firebase/auth";
 import { auth } from "../configs/firebase";
 import { showToast } from "../scripts/showToast";
 import { useNavigate } from "react-router-dom";
-import { useAuthState } from "react-firebase-hooks/auth";
+import { AuthContext } from "../context/AuthContextProvider";
 
-const SignOut:React.FC = () => {
+const SignOut: React.FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
-  const [user] = useAuthState(auth);
+  const values = useContext(AuthContext);
   const isMobile = useBreakpointValue({ base: true, sm: false });
 
   const handleSignOut = async () => {
@@ -26,8 +26,8 @@ const SignOut:React.FC = () => {
   };
   return (
     <Flex justifyContent={"flex-end"} alignItems={"center"} gap="8px">
-      {!isMobile && <Text>{user?.email}</Text>}
-      {user && <Button onClick={handleSignOut}>Sign Out</Button>}
+      {!isMobile && <Text>{values?.user?.email}</Text>}
+      {values?.user && <Button onClick={handleSignOut}>Sign Out</Button>}
     </Flex>
   );
 };
