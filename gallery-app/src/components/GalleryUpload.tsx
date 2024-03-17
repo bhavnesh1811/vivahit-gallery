@@ -161,9 +161,9 @@ const GalleryUpload: React.FC = () => {
               />
               <Text>
                 {uploadStatus ? (
-                  <CircularProgress value={uploadProgress}>
-                    <CircularProgressLabel>
-                      {uploadProgress.toFixed(2)}%
+                  <CircularProgress value={uploadProgress} >
+                    <CircularProgressLabel >
+                      {uploadProgress.toFixed(0)}%
                     </CircularProgressLabel>
                   </CircularProgress>
                 ) : (

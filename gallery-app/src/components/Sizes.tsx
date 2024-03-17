@@ -12,7 +12,7 @@ const Sizes: React.FC<SizesProps> = ({
       justifyContent={{ md: "space-around" }}
       direction={{ base: "column", md: "row" }}
       gap={"16px"}
-      h={{md:"150px"}}
+      h={{ md: "150px" }}
     >
       <Flex
         flex={1}
@@ -20,42 +20,38 @@ const Sizes: React.FC<SizesProps> = ({
         p="8px 16px"
         borderRadius={"12px"}
         justifyContent={"center"}
+        alignItems={"center"}
         direction={"column"}
         background={"linear-gradient(to right, #44bdf9, #58b5b9)"}
-
       >
         <Text>Total Files Uploaded </Text>
-        <Heading>
-          {allFilesSize}
-        </Heading>
+        <Heading>{allFilesSize}</Heading>
       </Flex>
       <Flex
         flex={1}
         boxShadow={"rgba(0,0,0,0.5)0px 5px 15px"}
         p="8px 16px"
         borderRadius={"12px"}
+        alignItems={"center"}
         justifyContent={"center"}
         direction={"column"}
         background={"linear-gradient(to right, #44bdf9, #58b5b9)"}
       >
         <Text>Total Videos Uploaded </Text>
-        <Heading>
-          {videoFilesSize}
-        </Heading>
+        <Heading>{videoFilesSize}</Heading>
       </Flex>
       <Flex
         flex={1}
         boxShadow={"rgba(0,0,0,0.5)0px 5px 15px"}
         p="8px 16px"
         borderRadius={"12px"}
+        alignItems={"center"}
         justifyContent={"center"}
         direction={"column"}
         background={"linear-gradient(to right, #44bdf9, #58b5b9)"}
       >
         <Text>Total Image Size </Text>
-        <Heading>
-          {imageFilesSize}
-        </Heading>
+        <Heading>{imageFilesSize}</Heading>
       </Flex>
     </Flex>
   );
