@@ -55,14 +55,14 @@ function Signup(): React.ReactElement {
           if (userCredential.user) {
             showToast(
               "Sign up Successful",
-              "Redirecting to Login",
+              "Redirecting to Home",
               "success",
               toast
             );
             await setDoc(doc(db, "gallery", userCredential.user.uid), {
               gallery: [],
             });
-            navigate("/login");
+            navigate("/");
           }
         })
         .catch((error: FirebaseError) => {
@@ -72,13 +72,8 @@ function Signup(): React.ReactElement {
   };
 
   return (
-    <Flex
-      minH={"100vh"}
-      align={"center"}
-      justify={"center"}
-      bg={useColorModeValue("gray.50", "gray.800")}
-    >
-      <Stack spacing={8} mx={"auto"} maxW={"lg"} py={12} px={6}>
+    <Flex alignItems={"center"} justifyContent={"center"}>
+      <Stack spacing={8} mx={"auto"} maxW={"lg"} py={6} px={6}>
         <Stack align={"center"}>
           <Heading fontSize={"4xl"} textAlign={"center"}>
             Sign up
