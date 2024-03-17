@@ -24,11 +24,24 @@ const Gallery: React.FC<GalleryProps> = ({ file }) => {
           alt="image"
           _hover={{ transform: "50px" }}
         />
-      ) : fileType === "video" ? (
-        <AspectRatio borderRadius={"12px"} ratio={1} width={{ base: "100%", md: "200px" }}>
-          <iframe title={file?.name} style={{borderRadius:"12px"}} src={file?.fileUrl} allowFullScreen />
+      ) : file.type === "video/avi" ? (
+        <video width="200" height="200" controls className="h-full w-full">
+          <source src={file.fileUrl} type={file.type} />
+        </video>
+      ) : (
+        <AspectRatio
+          borderRadius={"12px"}
+          ratio={1}
+          width={{ base: "100%", md: "200px" }}
+        >
+          <iframe
+            title={file?.name}
+            style={{ borderRadius: "12px" }}
+            src={file?.fileUrl}
+            allowFullScreen
+          />
         </AspectRatio>
-      ) : null}
+      )}
     </Box>
   );
 };
