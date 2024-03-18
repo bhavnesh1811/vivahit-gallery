@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, ChangeEvent } from "react";
 import {
   Flex,
   Input,
@@ -23,6 +23,7 @@ import { AuthContext } from "../context/AuthContextProvider";
 const GalleryUpload: React.FC = () => {
   const toast = useToast();
   const [data, setData] = useState<FileData[]>([]);
+  const [file, setFile] = useState<File[]>([]);
   const [uploadStatus, setUploadStatus] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [allFilesSize, setAllFilesSize] = useState<string>("");
@@ -48,82 +49,156 @@ const GalleryUpload: React.FC = () => {
     // eslint-disable-next-line
   }, []);
 
-  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    let file: File | null = null;
-    if (event.target.files && event.target.files.length > 0) {
-      file = event.target.files[0];
+  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files;
+    // console.log(selectedFiles);
+    if (selectedFiles && selectedFiles.length) {
+      setFile(Array.from(selectedFiles)); 
+      handleUpload(Array.from(selectedFiles));
+    } else {
+      setFile([]);
     }
+  };
+
+  const handleUpload = async (file: File[]) => {
     try {
-      
-      if (!file) {
+      let totalSize: number = 0;
+      const uploadDataList: FileData[] = [];
+      for (let i = 0; i < file.length; i++) {
+        totalSize += file[i].size;
+      }
+
+      if (!file || file.length === 0) {
         showToast("Error", "Please select a file to upload.", "error", toast);
         return;
       }
-      if (file.size>30*1024*1024) {
-        showToast("Error", "Please size should be less than 30mb", "error", toast);
-        file=null;
-        return;
-      }
-      if (!isImageOrVideo(file.type)) {
+
+      if (totalSize > 30 * 1024 * 1024) {
         showToast(
           "Error",
-          "Please select a image/video file to upload.",
+          "File size should be less than 30mb",
           "error",
           toast
         );
+        setFile([]);
         return;
       }
 
-      const uuid = uuidv4();
-      const data = {
-        name: `files/${uuid}`,
-        size: file.size,
-        type: file.type,
-        fileUrl: "",
-      };
-      const storageRef = ref(storage, data.name);
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      const uploadTasks = file.map((file: File) => {
+        if (!isImageOrVideo(file.type)) {
+          showToast(
+            "Error",
+            "Please select an image/video file to upload.",
+            "error",
+            toast
+          );
+          return null;
+        }
+        const uuid = uuidv4();
+        const uploadData = {
+          name: `files/${uuid}`,
+          size: file.size,
+          type: file.type,
+          fileUrl: "",
+        };
+        uploadDataList.push(uploadData);
+        const storageRef = ref(storage, uploadData.name);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+        return uploadTask;
+      });
 
       setUploadStatus(true);
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        },
-        (error) => {
-          console.error("Error uploading file:", error);
-          showToast("Error", "Failed to upload file.", "error", toast);
-          setUploadStatus(false);
-          setUploadProgress(0);
-        },
-        () => {
-          getDownloadURL(uploadTask.snapshot.ref).then(async (download) => {
-            data.fileUrl = download;
-            if (values?.user?.uid)
-              await updateDoc(doc(db, "gallery", values?.user?.uid), {
-                gallery: arrayUnion(data),
-              });
-            showToast(
-              "Success",
-              "File uploaded successfully!",
-              "success",
-              toast
+
+      const combinedUploadTask = uploadTasks.reduce(
+        (combinedTask: any, task: any) => {
+          if (task) {
+            return onAllTasks(
+              combinedTask,
+              task,
+              () => setUploadProgress(getCombinedProgress(uploadTasks)),
+              (error) => handleUploadError(error)
             );
-            setUploadStatus(false);
-            setUploadProgress(0);
-            file=null;
-            getData();
+          }
+          return combinedTask;
+        },
+        null
+      );
+
+      if (combinedUploadTask) {
+        await combinedUploadTask;
+        const fileUrls = await Promise.all(
+          uploadDataList.map(async (uploadData) => {
+            const downloadUrl = await getDownloadURL(
+              ref(storage, uploadData.name)
+            );
+            return { ...uploadData, fileUrl: downloadUrl };
+          })
+        );
+
+        if (values?.user?.uid) {
+          await updateDoc(doc(db, "gallery", values?.user?.uid), {
+            gallery: arrayUnion(...fileUrls),
           });
         }
-      );
+
+        showToast("Success", "Files uploaded successfully!", "success", toast);
+        setUploadStatus(false);
+        setUploadProgress(0);
+        setFile([]);
+        setData([...data, ...fileUrls]);
+      }
     } catch (error) {
-      console.error("Error uploading file:", error);
-      showToast("Error", "Failed to upload file.", "error", toast);
-      setUploadStatus(false);
-      setUploadProgress(0);
+      handleUploadError(error);
     }
+  };
+
+  const onAllTasks = (
+    combinedTask: any | null,
+    task: any,
+    onProgress: () => void,
+    onError: (error: any) => void
+  ) => {
+    if (!combinedTask) {
+      return task;
+    }
+
+    const combinedSnapshot = {
+      bytesTransferred: 0,
+      totalBytes: 0,
+      state: "running",
+    };
+
+    combinedTask.on(
+      "state_changed",
+      (snapshot: any) => {
+        combinedSnapshot.bytesTransferred += snapshot.bytesTransferred;
+        combinedSnapshot.totalBytes += snapshot.totalBytes;
+        onProgress();
+      },
+      (error: any) => onError(error)
+    );
+
+    return combinedTask;
+  };
+
+  const getCombinedProgress = (tasks: any[]) => {
+    const totalBytes = tasks.reduce(
+      (total, task) => total + (task.snapshot?.totalBytes || 0),
+      0
+    );
+    const bytesTransferred = tasks.reduce(
+      (transferred, task) =>
+        transferred + (task.snapshot?.bytesTransferred || 0),
+      0
+    );
+    return (bytesTransferred / totalBytes) * 100;
+  };
+
+  const handleUploadError = (error: any) => {
+    console.error("Error uploading file:", error);
+    showToast("Error", "Failed to upload file.", "error", toast);
+    setUploadStatus(false);
+    setUploadProgress(0);
   };
 
   return (
@@ -159,17 +234,20 @@ const GalleryUpload: React.FC = () => {
                 h={7}
                 w={7}
               />
-              {!uploadStatus && <Input
-                id="fileUpload"
-                onChange={handleUpload}
-                style={{ display: "none" }}
-                type="file"
-                accept="image/*, video/*"
-              />}
+              {!uploadStatus && (
+                <Input
+                  id="fileUpload"
+                  onChange={handleChange}
+                  style={{ display: "none" }}
+                  type="file"
+                  accept="image/*, video/*"
+                  multiple
+                />
+              )}
               <Text>
                 {uploadStatus ? (
-                  <CircularProgress value={uploadProgress} >
-                    <CircularProgressLabel >
+                  <CircularProgress value={uploadProgress}>
+                    <CircularProgressLabel>
                       {uploadProgress.toFixed(0)}%
                     </CircularProgressLabel>
                   </CircularProgress>
