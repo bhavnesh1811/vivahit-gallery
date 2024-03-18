@@ -145,7 +145,7 @@ const GalleryUpload: React.FC = () => {
         setUploadStatus(false);
         setUploadProgress(0);
         setFile([]);
-        setData([...data, ...fileUrls]);
+        getData();
       }
     } catch (error) {
       handleUploadError(error);
