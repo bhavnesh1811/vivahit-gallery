@@ -17,12 +17,26 @@ Password:
   ```bash
  admin123
   ```
+## ScreenShots
+- Login Page
+![Screenshot (48)](https://github.com/bhavnesh1811/vivahit-gallery/assets/110032728/163445a9-70f8-4db0-b9fd-f19f4c1f961e)
+
+- Signup Page
+![Screenshot (54)](https://github.com/bhavnesh1811/vivahit-gallery/assets/110032728/340aa6d5-8051-46a4-8109-9ee9a001ab62)
+
+- Home
+1) Web Screen
+![Screenshot (49)](https://github.com/bhavnesh1811/vivahit-gallery/assets/110032728/5677ce2b-3e1d-409b-b5ce-cd88553bc5c2)
+2) Tab Screen
+![Screenshot (51)](https://github.com/bhavnesh1811/vivahit-gallery/assets/110032728/4f52804b-8538-4220-bc94-7bfb7dd24a6a)
+3) Mobile Screen
+![Screenshot (52)](https://github.com/bhavnesh1811/vivahit-gallery/assets/110032728/e17de08f-1e65-4e10-b2d4-c691b30aeb30)
 
 ## Features
 
-- Home Page.
 - Login Page.
 - SignUp Page.
+- Home Page.
 - Dark/Light Theme.
 
 ## Installation
