@@ -23,6 +23,7 @@ import { AuthContext } from "../context/AuthContextProvider";
 const GalleryUpload: React.FC = () => {
   const toast = useToast();
   const [data, setData] = useState<FileData[]>([]);
+  // eslint-disable-next-line
   const [file, setFile] = useState<File[]>([]);
   const [uploadStatus, setUploadStatus] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -53,7 +54,7 @@ const GalleryUpload: React.FC = () => {
     const selectedFiles = e.target.files;
     // console.log(selectedFiles);
     if (selectedFiles && selectedFiles.length) {
-      setFile(Array.from(selectedFiles)); 
+      setFile(Array.from(selectedFiles));
       handleUpload(Array.from(selectedFiles));
     } else {
       setFile([]);
@@ -159,6 +160,20 @@ const GalleryUpload: React.FC = () => {
     onError: (error: any) => void
   ) => {
     if (!combinedTask) {
+      const tasksnapShot = {
+        bytesTransferred: 0,
+        totalBytes: 0,
+        state: "running",
+      };
+      task.on(
+        "state_changed",
+        (snapshot: any) => {
+          tasksnapShot.bytesTransferred += snapshot.bytesTransferred;
+          tasksnapShot.totalBytes += snapshot.totalBytes;
+          onProgress();
+        },
+        (error: any) => onError(error)
+      );
       return task;
     }
 
@@ -173,6 +188,8 @@ const GalleryUpload: React.FC = () => {
       (snapshot: any) => {
         combinedSnapshot.bytesTransferred += snapshot.bytesTransferred;
         combinedSnapshot.totalBytes += snapshot.totalBytes;
+        // console.log(combinedSnapshot, snapshot);
+
         onProgress();
       },
       (error: any) => onError(error)
