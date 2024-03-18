@@ -2,8 +2,8 @@ import React, { useContext } from "react";
 import {
   Button,
   Flex,
-  Text,
-  useBreakpointValue,
+  // Text,
+  // useBreakpointValue,
   useToast,
 } from "@chakra-ui/react";
 import { signOut } from "firebase/auth";
@@ -16,7 +16,7 @@ const SignOut: React.FC = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const values = useContext(AuthContext);
-  const isMobile = useBreakpointValue({ base: true, sm: false });
+  // const isMobile = useBreakpointValue({ base: true, sm: false });
 
   const handleSignOut = async () => {
     await signOut(auth).then(() => {
@@ -26,7 +26,7 @@ const SignOut: React.FC = () => {
   };
   return (
     <Flex justifyContent={"flex-end"} alignItems={"center"} gap="8px">
-      {!isMobile && <Text>{values?.user?.email}</Text>}
+      {/* {!isMobile && <Text>{values?.user?.email}</Text>} */}
       {values?.user && <Button onClick={handleSignOut}>Sign Out</Button>}
     </Flex>
   );
